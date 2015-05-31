@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace MPE_try1
 {
-    class ecoAgent
+    class eAgent
     {
         // ID Agenta
         private int id;

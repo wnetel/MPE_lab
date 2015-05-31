@@ -1,19 +1,67 @@
-﻿<Window x:Name="MPE_Agent_Meeting_Hall" x:Class="MPE_try1.MainWindow"
+﻿<Window
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="MPE Agent Meeting Hall" Height="350" Width="525">
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:PresentationOptions="http://schemas.microsoft.com/winfx/2006/xaml/presentation/options"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" mc:Ignorable="d" x:Name="MPE_Agent_Meeting_Hall" x:Class="MPE_try1.MainWindow"
+        Title="MPE Agent Meeting Hall" Height="740" Width="960">
+    <!--<Window.Resources>
+        -->
+    <!-- This is the geometry creates the animation path. Because 
+         this example uses it multiple times, it's declared as a resource and
+         frozen to improve performance. -->
+    <!--
+        <PathGeometry x:Key="AnimationPath"
+      Figures="M 334,445 C 386,137 256,400 435,427 53,493 311,438 176,384"
+      PresentationOptions:Freeze="True" />
+    </Window.Resources>-->
+
     <Grid>
-        <Menu IsMainMenu="True">
+        <Menu IsMainMenu="True" Height="18" VerticalAlignment="Top">
             <MenuItem Header="_File">
                 <MenuItem Header="E_xit" Click="AppExit"/>
             </MenuItem>
-            <MenuItem Header="_Edit" />
+            <MenuItem Header="_Run visualization" Click="Visualize"/>
             <MenuItem Header="_Help">
                 <MenuItem Header="_About" Click="ShowInfo" />
             </MenuItem>
         </Menu>
-        <StackPanel HorizontalAlignment="Left" Height="300" Margin="0,20,0,0" VerticalAlignment="Top" Width="Auto">
-            <Canvas/>
-        </StackPanel>
+        <Canvas Name="MainCanvas">
+            <Ellipse   
+      Width="10" Height="10" Fill="Green" Name="AgentSmith">
+                <Ellipse.RenderTransform>
+                    <TranslateTransform x:Name="AnimatedTranslateTransform"  />
+                </Ellipse.RenderTransform>
+
+                <Ellipse.Triggers>
+                    <EventTrigger RoutedEvent="Path.Loaded">
+                        <BeginStoryboard Name="AgentMovement">
+                            <Storyboard RepeatBehavior="Forever" AutoReverse="True">
+
+                                <!-- Animates the rectangle horizotally along the path. -->
+                                <DoubleAnimationUsingPath
+                                    Name="RuchX"
+                Storyboard.TargetName="AnimatedTranslateTransform"
+                Storyboard.TargetProperty="X"
+                Source="X" 
+                Duration="0:0:10"  />
+
+                                <!-- Animates the rectangle vertically along the path. -->
+                                <DoubleAnimationUsingPath
+                                    Name="RuchY"
+                Storyboard.TargetName="AnimatedTranslateTransform"
+                Storyboard.TargetProperty="Y"
+                Source="Y" 
+                Duration="0:0:10"  />
+                            </Storyboard>
+                        </BeginStoryboard>
+                    </EventTrigger>
+                </Ellipse.Triggers>
+            </Ellipse>
+            <Path Name="linia" Stroke="Black" StrokeThickness="2" />
+        </Canvas>
     </Grid>
 </Window>
+
+<!--PathGeometry="{StaticResource AnimationPath}"-->
+<!--Data="{StaticResource AnimationPath}"-->
