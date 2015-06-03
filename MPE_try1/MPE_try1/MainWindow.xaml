@@ -22,23 +22,20 @@
                 <MenuItem Header="E_xit" Click="AppExit"/>
             </MenuItem>
             <MenuItem Header="_Run visualization" Click="Visualize"/>
+            <MenuItem Header="_Pause visualization" Click="PauseV"/>
             <MenuItem Header="_Help">
                 <MenuItem Header="_About" Click="ShowInfo" />
             </MenuItem>
         </Menu>
-        <Canvas Name="MainCanvas">
-            <Ellipse   
+        <Canvas Name="MainCanvas" Margin="0,18,0,0">
+            <!--<Ellipse   
       Width="10" Height="10" Fill="Green" Name="AgentSmith">
-                <Ellipse.RenderTransform>
-                    <TranslateTransform x:Name="AnimatedTranslateTransform"  />
-                </Ellipse.RenderTransform>
-
                 <Ellipse.Triggers>
                     <EventTrigger RoutedEvent="Path.Loaded">
                         <BeginStoryboard Name="AgentMovement">
                             <Storyboard RepeatBehavior="Forever" AutoReverse="True">
 
-                                <!-- Animates the rectangle horizotally along the path. -->
+                                --><!-- Animates the rectangle horizotally along the path. --><!--
                                 <DoubleAnimationUsingPath
                                     Name="RuchX"
                 Storyboard.TargetName="AnimatedTranslateTransform"
@@ -46,7 +43,7 @@
                 Source="X" 
                 Duration="0:0:10"  />
 
-                                <!-- Animates the rectangle vertically along the path. -->
+                                --><!-- Animates the rectangle vertically along the path. --><!--
                                 <DoubleAnimationUsingPath
                                     Name="RuchY"
                 Storyboard.TargetName="AnimatedTranslateTransform"
@@ -57,8 +54,7 @@
                         </BeginStoryboard>
                     </EventTrigger>
                 </Ellipse.Triggers>
-            </Ellipse>
-            <Path Name="linia" Stroke="Black" StrokeThickness="2" />
+            </Ellipse>-->
         </Canvas>
     </Grid>
 </Window>
