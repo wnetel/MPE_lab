@@ -16,6 +16,7 @@ using System.Windows.Media.Animation;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
+using System.Windows.Threading;
 
 namespace MPE_try1
 {
@@ -27,17 +28,18 @@ namespace MPE_try1
         private static Dictionary<string, Ellipse> ellipseList;
         private static Storyboard storTmp;
         private static int ileAgentow;
+        private DispatcherTimer dispatcherTimer;
+        private int ileKolizji;
+
 
         public MainWindow()
         {
             InitializeComponent();
-            ileAgentow = 30;
-            eVisualizer pokazywacz = new eVisualizer(ileAgentow);
-            Application.Current.Resources.MergedDictionaries.Add(pokazywacz.pathsDict);
             Thread.CurrentThread.CurrentUICulture = CultureInfo.GetCultureInfo("en-US");
             ellipseList = new Dictionary<string, Ellipse>();
             storTmp = new Storyboard();
-            
+            storTmp.AutoReverse = false;
+            ileKolizji = 0;
         }
 
         private void AppExit(object sender, RoutedEventArgs e)
@@ -50,72 +52,162 @@ namespace MPE_try1
             MessageBox.Show("This is MPE ecoAgent Simulator, version " + System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.ToString());
         }
 
-        private void Visualize(object sender, RoutedEventArgs e)
+        private Brush PickRandomBrush(Random rnd)
         {
-            //for (int idx = 1; idx <= 20; idx++)
-            //{
-            //    Ellipse eli+idx.ToString() = new Ellipse();
-            //    MainCanvas.Children.Add(eli)
-            //}
+            Brush result = Brushes.Transparent;
+            Type brushesType = typeof(Brushes);
+            PropertyInfo[] properties = brushesType.GetProperties();
+            int random = rnd.Next(properties.Length);
+            result = (Brush)properties[random].GetValue(null, null);
+            return result;
+        }
 
+        private void Populate_agents()
+        {
+            Random rnd = new Random();
+            eVisualizer pokazywacz = new eVisualizer(int.Parse(AgentCount.Text));
+            Application.Current.Resources.MergedDictionaries.Add(pokazywacz.pathsDict);
 
-            for (int idx = 1; idx <= ileAgentow; idx++)
+            for (int idx = 1; idx <= int.Parse(AgentCount.Text); idx++)
             {
                 Ellipse eliTmp = new Ellipse();
                 Path linTmp = new Path();
                 DoubleAnimationUsingPath aniXTmp = new DoubleAnimationUsingPath();
                 DoubleAnimationUsingPath aniYTmp = new DoubleAnimationUsingPath();
 
-                storTmp.AutoReverse = true;
-                storTmp.RepeatBehavior = System.Windows.Media.Animation.RepeatBehavior.Forever;
                 eliTmp.Name = "ellipse" + idx;
                 linTmp.Name = "linia" + idx;
-                aniXTmp.Name = "animationX" + idx;
-                aniYTmp.Name = "animationY" + idx;
-                //storTmp.Name = "storyboard" + idx;
 
                 eliTmp.Width = 10;
                 eliTmp.Height = 10;
-                eliTmp.Fill = new SolidColorBrush(Colors.Red);
+                eliTmp.Fill = PickRandomBrush(rnd);
+                //new SolidColorBrush(Colors.Red);
                 eliTmp.RenderTransform = new TranslateTransform();
                 //EventTrigger evTr = new EventTrigger();
                 //evTr.RoutedEvent = EventManager.RegisterRoutedEvent("Path.Loaded" + idx, RoutingStrategy.Bubble, typeof(RoutedEventHandler), typeof(Ellipse));
                 //eliTmp.Triggers.Add(evTr);
                 ellipseList.Add("Ellipse" + idx.ToString(), eliTmp);
 
-                linTmp.Data = Geometry.Parse((string)TryFindResource("AnimationPath" + idx));
-                linTmp.Stroke = new SolidColorBrush(Colors.Yellow);
+                linTmp.Data = (Geometry)TryFindResource("AnimationPath" + idx);
+                linTmp.Stroke = PickRandomBrush(rnd);
 
                 aniXTmp.Name = "RuchX" + idx;
                 aniXTmp.Source = PathAnimationSource.X;
                 aniXTmp.Duration = TimeSpan.FromSeconds(20);
+                Storyboard.SetDesiredFrameRate(aniXTmp, 5);
                 Storyboard.SetTarget(aniXTmp, eliTmp);
                 Storyboard.SetTargetProperty(aniXTmp, new PropertyPath(Canvas.LeftProperty));
+
                 aniYTmp.Name = "RuchY" + idx;
                 aniYTmp.Source = PathAnimationSource.Y;
                 aniYTmp.Duration = TimeSpan.FromSeconds(20);
+                Storyboard.SetDesiredFrameRate(aniYTmp, 5);
                 Storyboard.SetTarget(aniYTmp, eliTmp);
                 Storyboard.SetTargetProperty(aniYTmp, new PropertyPath(Canvas.TopProperty));
 
-                aniXTmp.PathGeometry = PathGeometry.Parse((string)TryFindResource("AnimationPath" + idx)).GetWidenedPathGeometry(new Pen());
-                aniYTmp.PathGeometry = PathGeometry.Parse((string)TryFindResource("AnimationPath" + idx)).GetWidenedPathGeometry(new Pen());
+                aniXTmp.PathGeometry = (PathGeometry)TryFindResource("AnimationPath" + idx);
+                aniYTmp.PathGeometry = (PathGeometry)TryFindResource("AnimationPath" + idx);
 
                 MainCanvas.Children.Add(eliTmp);
-                MainCanvas.Children.Add(linTmp);
+                if (ShowPaths.IsChecked == true)
+                {
+                    MainCanvas.Children.Add(linTmp);
+                }
                 storTmp.Children.Add(aniXTmp);
                 storTmp.Children.Add(aniYTmp);
 
             }
-            storTmp.Begin(this.MainCanvas, true);
-
-
         }
 
-        private void PauseV(object sender, RoutedEventArgs e)
+        private void dispatcherTimer_Tick(object sender, EventArgs e)
         {
-            if (storTmp.GetCurrentState() == System.Windows.Media.Animation.ClockState.Active)
-            { storTmp.Pause(this.MainCanvas); }
-            else { storTmp.Resume(this.MainCanvas); }
+            int x1,x2,y1,y2;
+            //storTmp.Pause(this);
+
+            //for (int index = 0; index < ellipseList.Count; index++)
+            //{
+            //    var myEllipse = ellipseList.ElementAt(index).Value;
+            //    var myEllipse2 = ellipseList.ElementAt(index).Value;
+                
+            //    //if (index < ellipseList.Count - 1)
+            //    //{
+            //    //    myEllipse2 = ellipseList.ElementAt(index + 1).Value;
+            //    //}
+            //    //else { break; }
+
+            //    y1 = (int)Canvas.GetTop(myEllipse);
+            //    x1 = (int)Canvas.GetLeft(myEllipse);
+            //    EllipseGeometry meg1 = new EllipseGeometry(new Point(x1,y1),2,2);
+
+            //    for (int index2 = index + 1; index2 < ellipseList.Count; index2++)
+            //    {
+            //        myEllipse2 = ellipseList.ElementAt(index2).Value;
+            //        y2 = (int)Canvas.GetTop(myEllipse2);
+            //        x2 = (int)Canvas.GetLeft(myEllipse2);
+            //        EllipseGeometry meg2 = new EllipseGeometry(new Point(x2, y2), 2, 2);
+            //        IntersectionDetail d1 = meg1.FillContainsWithDetail(meg2, 0.1,ToleranceType.Absolute);
+            //        if (d1 != IntersectionDetail.Empty)
+            //        {
+            //            ileKolizji++;
+            //            LoggingField.Text = LoggingField.Text + "\n"+ myEllipse.Name + " z " + myEllipse2.Name;
+            //        }
+
+            //        //if (Math.Abs(y1 - y2) <= 2 && Math.Abs(x1 - x2) <= 2)
+            //        //{
+            //        //    ileKolizji++;
+            //        //}
+            //    }
+            //}
+
+            //CollisionsCount.Content = ileKolizji;
+            //storTmp.Resume(this);
+            // Forcing the CommandManager to raise the RequerySuggested event
+            CommandManager.InvalidateRequerySuggested();
+        }
+
+        private void Start_Button_Click(object sender, RoutedEventArgs e)
+        {
+            Populate_agents();
+            storTmp.Completed += new EventHandler(StopMyDispatcher);
+            StartButton.IsEnabled = false;
+            ShowPaths.IsEnabled = false;
+            storTmp.Begin(this, true);
+            dispatcherTimer = new System.Windows.Threading.DispatcherTimer();
+            dispatcherTimer.Tick += new EventHandler(dispatcherTimer_Tick);
+            dispatcherTimer.Interval = new TimeSpan(0, 0, 0, 0, 10);
+            dispatcherTimer.Start();
+        }
+
+        private void StopMyDispatcher(object sender, EventArgs e)
+        {
+            dispatcherTimer.Stop();
+        }
+
+        private void Pause_Button_Click(object sender, RoutedEventArgs e)
+        {
+            if (storTmp.GetIsPaused(this) == false)
+            {
+                storTmp.Pause(this);
+                dispatcherTimer.Stop();
+            }
+            else
+            {
+                storTmp.Resume(this);
+                dispatcherTimer.Start();
+            }
+        }
+
+        private void ResetButton_Click(object sender, RoutedEventArgs e)
+        {
+            storTmp.Stop(this);
+            ileKolizji = 0;
+            CollisionsCount.Content = "None";
+            dispatcherTimer.Stop();
+            StartButton.IsEnabled = true;
+            ShowPaths.IsEnabled = true;
+            ellipseList = new Dictionary<string, Ellipse>();
+            storTmp = new Storyboard();
+            storTmp.AutoReverse = false;
         }
 
     }
