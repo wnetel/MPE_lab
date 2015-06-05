@@ -8,7 +8,14 @@ namespace MPE_try1
 {
     public class eArena
     {
-        int eArenaID;
+        private int eArenaID;
+
+        public int EArenaID
+        {
+            get { return eArenaID; }
+            set { eArenaID = value; }
+        }
+
         public eArena()
         {
             eArenaID = 0;

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Globalization;
 using System.Linq;
 using System.Reflection;
@@ -25,21 +26,24 @@ namespace MPE_try1
     /// </summary>
     public partial class MainWindow : Window
     {
-        private static Dictionary<string, Ellipse> ellipseList;
-        private static Storyboard storTmp;
-        private static int ileAgentow;
-        private DispatcherTimer dispatcherTimer;
-        private int ileKolizji;
+        GlobalVars globals;
+        BackgroundWorker bw;
 
+        public static MainWindow Current { get; private set; }
 
         public MainWindow()
         {
             InitializeComponent();
+            Current = this;
+            globals = new GlobalVars();
             Thread.CurrentThread.CurrentUICulture = CultureInfo.GetCultureInfo("en-US");
-            ellipseList = new Dictionary<string, Ellipse>();
-            storTmp = new Storyboard();
-            storTmp.AutoReverse = false;
-            ileKolizji = 0;
+            bw = new BackgroundWorker();
+
+            bw.WorkerSupportsCancellation = true;
+            bw.WorkerReportsProgress = true;
+            bw.DoWork += new DoWorkEventHandler(bw_DoWork);
+            //bw.ProgressChanged += new ProgressChangedEventHandler(bw_ProgressChanged);
+            bw.RunWorkerCompleted += new RunWorkerCompletedEventHandler(bw_RunWorkerCompleted);
         }
 
         private void AppExit(object sender, RoutedEventArgs e)
@@ -64,9 +68,8 @@ namespace MPE_try1
 
         private void Populate_agents()
         {
-            Random rnd = new Random();
-            eVisualizer pokazywacz = new eVisualizer(int.Parse(AgentCount.Text));
-            Application.Current.Resources.MergedDictionaries.Add(pokazywacz.pathsDict);
+            eVisualizer pokazywacz = new eVisualizer(int.Parse(AgentCount.Text), globals.BoardDimension, globals.PathsDict, globals.randGen);
+            Application.Current.Resources.MergedDictionaries.Add(globals.PathsDict);
 
             for (int idx = 1; idx <= int.Parse(AgentCount.Text); idx++)
             {
@@ -75,30 +78,26 @@ namespace MPE_try1
                 DoubleAnimationUsingPath aniXTmp = new DoubleAnimationUsingPath();
                 DoubleAnimationUsingPath aniYTmp = new DoubleAnimationUsingPath();
 
-                eliTmp.Name = "ellipse" + idx;
-                linTmp.Name = "linia" + idx;
+                eliTmp.Name = "Ellipse" + idx;
+                linTmp.Name = "Line" + idx;
 
                 eliTmp.Width = 10;
                 eliTmp.Height = 10;
-                eliTmp.Fill = PickRandomBrush(rnd);
-                //new SolidColorBrush(Colors.Red);
+                eliTmp.Fill = PickRandomBrush(globals.randGen);
                 eliTmp.RenderTransform = new TranslateTransform();
-                //EventTrigger evTr = new EventTrigger();
-                //evTr.RoutedEvent = EventManager.RegisterRoutedEvent("Path.Loaded" + idx, RoutingStrategy.Bubble, typeof(RoutedEventHandler), typeof(Ellipse));
-                //eliTmp.Triggers.Add(evTr);
-                ellipseList.Add("Ellipse" + idx.ToString(), eliTmp);
+                globals.ellipseList.Add("Ellipse" + idx.ToString(), eliTmp);
 
                 linTmp.Data = (Geometry)TryFindResource("AnimationPath" + idx);
-                linTmp.Stroke = PickRandomBrush(rnd);
+                linTmp.Stroke = PickRandomBrush(globals.randGen);
 
-                aniXTmp.Name = "RuchX" + idx;
+                aniXTmp.Name = "MovementX" + idx;
                 aniXTmp.Source = PathAnimationSource.X;
                 aniXTmp.Duration = TimeSpan.FromSeconds(20);
                 Storyboard.SetDesiredFrameRate(aniXTmp, 5);
                 Storyboard.SetTarget(aniXTmp, eliTmp);
                 Storyboard.SetTargetProperty(aniXTmp, new PropertyPath(Canvas.LeftProperty));
 
-                aniYTmp.Name = "RuchY" + idx;
+                aniYTmp.Name = "MovementY" + idx;
                 aniYTmp.Source = PathAnimationSource.Y;
                 aniYTmp.Duration = TimeSpan.FromSeconds(20);
                 Storyboard.SetDesiredFrameRate(aniYTmp, 5);
@@ -113,101 +112,139 @@ namespace MPE_try1
                 {
                     MainCanvas.Children.Add(linTmp);
                 }
-                storTmp.Children.Add(aniXTmp);
-                storTmp.Children.Add(aniYTmp);
+                globals.storTmp.Children.Add(aniXTmp);
+                globals.storTmp.Children.Add(aniYTmp);
 
             }
         }
 
         private void dispatcherTimer_Tick(object sender, EventArgs e)
         {
-            int x1,x2,y1,y2;
-            //storTmp.Pause(this);
 
-            //for (int index = 0; index < ellipseList.Count; index++)
-            //{
-            //    var myEllipse = ellipseList.ElementAt(index).Value;
-            //    var myEllipse2 = ellipseList.ElementAt(index).Value;
-                
-            //    //if (index < ellipseList.Count - 1)
-            //    //{
-            //    //    myEllipse2 = ellipseList.ElementAt(index + 1).Value;
-            //    //}
-            //    //else { break; }
-
-            //    y1 = (int)Canvas.GetTop(myEllipse);
-            //    x1 = (int)Canvas.GetLeft(myEllipse);
-            //    EllipseGeometry meg1 = new EllipseGeometry(new Point(x1,y1),2,2);
-
-            //    for (int index2 = index + 1; index2 < ellipseList.Count; index2++)
-            //    {
-            //        myEllipse2 = ellipseList.ElementAt(index2).Value;
-            //        y2 = (int)Canvas.GetTop(myEllipse2);
-            //        x2 = (int)Canvas.GetLeft(myEllipse2);
-            //        EllipseGeometry meg2 = new EllipseGeometry(new Point(x2, y2), 2, 2);
-            //        IntersectionDetail d1 = meg1.FillContainsWithDetail(meg2, 0.1,ToleranceType.Absolute);
-            //        if (d1 != IntersectionDetail.Empty)
-            //        {
-            //            ileKolizji++;
-            //            LoggingField.Text = LoggingField.Text + "\n"+ myEllipse.Name + " z " + myEllipse2.Name;
-            //        }
-
-            //        //if (Math.Abs(y1 - y2) <= 2 && Math.Abs(x1 - x2) <= 2)
-            //        //{
-            //        //    ileKolizji++;
-            //        //}
-            //    }
-            //}
-
-            //CollisionsCount.Content = ileKolizji;
+            if (bw.IsBusy != true)
+            {
+                bw.RunWorkerAsync();
+            }
             //storTmp.Resume(this);
             // Forcing the CommandManager to raise the RequerySuggested event
             CommandManager.InvalidateRequerySuggested();
         }
 
-        private void Start_Button_Click(object sender, RoutedEventArgs e)
+        private void bw_DoWork(object sender, DoWorkEventArgs e)
+        {
+            BackgroundWorker worker = sender as BackgroundWorker;
+
+
+            if ((worker.CancellationPending == true))
+            {
+                e.Cancel = true;
+            }
+            else
+            {
+                // Perform a time consuming operation and report progress.
+
+                globals.storTmp.Pause(this);
+                for (int index = 0; index < globals.ellipseList.Count; index++)
+                {
+                    var myEllipse = globals.ellipseList.ElementAt(index).Value;
+                    var myEllipse2 = globals.ellipseList.ElementAt(index).Value;
+                    MainWindow.Current.Dispatcher.Invoke(System.Windows.Threading.DispatcherPriority.Normal, new Action(delegate()
+        {
+            globals.y1 = (int)Canvas.GetTop(myEllipse);
+            globals.x1 = (int)Canvas.GetLeft(myEllipse);
+        }
+        ));
+                    EllipseGeometry meg1 = new EllipseGeometry(new Point(globals.x1, globals.y1), 2, 2);
+
+                    for (int index2 = index + 1; index2 < globals.ellipseList.Count; index2++)
+                    {
+                        myEllipse2 = globals.ellipseList.ElementAt(index2).Value;
+                        MainWindow.Current.Dispatcher.Invoke(System.Windows.Threading.DispatcherPriority.Normal, new Action(delegate()
+        {
+            globals.y2 = (int)Canvas.GetTop(myEllipse2);
+            globals.x2 = (int)Canvas.GetLeft(myEllipse2);
+        }
+        ));
+                        EllipseGeometry meg2 = new EllipseGeometry(new Point(globals.x2, globals.y2), 2, 2);
+                        IntersectionDetail d1 = meg1.FillContainsWithDetail(meg2, 0.1, ToleranceType.Absolute);
+                        if (d1 != IntersectionDetail.Empty)
+                        {
+                            globals.ileKolizji++;
+                            MainWindow.Current.Dispatcher.Invoke(System.Windows.Threading.DispatcherPriority.Normal, new Action(delegate()
+        {
+            LoggingField.Text = LoggingField.Text + "Kolizja: " + myEllipse.Name + " z " + myEllipse2.Name + "\n";
+        }
+        ));
+                        }
+                    }
+                    //worker.ReportProgress(index);
+                }
+                MainWindow.Current.Dispatcher.Invoke(System.Windows.Threading.DispatcherPriority.Normal, new Action(delegate()
+        {
+            CollisionsCount.Content = globals.ileKolizji;
+        }));
+                globals.storTmp.Resume(this);
+            }
+        }
+        private void bw_ProgressChanged(object sender, ProgressChangedEventArgs e)
+        {
+            this.LoggingField.Text = this.LoggingField.Text + (e.ProgressPercentage.ToString() + "\n");
+        }
+
+        private void bw_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
+        {
+            if ((e.Cancelled == true))
+            {
+                this.LoggingField.Text = this.LoggingField.Text + "Canceled!" + "\n";
+            }
+            else if (!(e.Error == null))
+            {
+                this.LoggingField.Text = this.LoggingField.Text + ("Error: " + e.Error.Message + "\n");
+            }
+        }
+
+        private void StartButton_Click(object sender, RoutedEventArgs e)
         {
             Populate_agents();
-            storTmp.Completed += new EventHandler(StopMyDispatcher);
+            globals.storTmp.Completed += new EventHandler(StopMyDispatcher);
             StartButton.IsEnabled = false;
             ShowPaths.IsEnabled = false;
-            storTmp.Begin(this, true);
-            dispatcherTimer = new System.Windows.Threading.DispatcherTimer();
-            dispatcherTimer.Tick += new EventHandler(dispatcherTimer_Tick);
-            dispatcherTimer.Interval = new TimeSpan(0, 0, 0, 0, 10);
-            dispatcherTimer.Start();
+            globals.storTmp.Begin(this, true);
+            globals.dispatcherTimer.Tick += new EventHandler(dispatcherTimer_Tick);
+            globals.dispatcherTimer.Start();
         }
 
         private void StopMyDispatcher(object sender, EventArgs e)
         {
-            dispatcherTimer.Stop();
+            globals.dispatcherTimer.Stop();
         }
 
-        private void Pause_Button_Click(object sender, RoutedEventArgs e)
+        private void PauseButton_Click(object sender, RoutedEventArgs e)
         {
-            if (storTmp.GetIsPaused(this) == false)
+            if (globals.storTmp.GetIsPaused(this) == false)
             {
-                storTmp.Pause(this);
-                dispatcherTimer.Stop();
+                globals.storTmp.Pause(this);
+                globals.dispatcherTimer.Stop();
             }
             else
             {
-                storTmp.Resume(this);
-                dispatcherTimer.Start();
+                globals.storTmp.Resume(this);
+                globals.dispatcherTimer.Start();
             }
         }
 
         private void ResetButton_Click(object sender, RoutedEventArgs e)
         {
-            storTmp.Stop(this);
-            ileKolizji = 0;
+            globals.storTmp.Stop(this);
+            globals.ileKolizji = 0;
             CollisionsCount.Content = "None";
-            dispatcherTimer.Stop();
+            globals.dispatcherTimer.Stop();
             StartButton.IsEnabled = true;
             ShowPaths.IsEnabled = true;
-            ellipseList = new Dictionary<string, Ellipse>();
-            storTmp = new Storyboard();
-            storTmp.AutoReverse = false;
+            globals.ellipseList = new Dictionary<string, Ellipse>();
+            globals.storTmp = new Storyboard();
+            globals.storTmp.AutoReverse = false;
+            LoggingField.Text = "";
         }
 
     }
