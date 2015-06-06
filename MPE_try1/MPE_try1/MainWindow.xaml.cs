@@ -68,8 +68,9 @@ namespace MPE_try1
 
         private void Populate_agents()
         {
-            eVisualizer pokazywacz = new eVisualizer(int.Parse(AgentCount.Text), globals.BoardDimension, globals.PathsDict, globals.randGen);
+            eInitializer pokazywacz = new eInitializer(int.Parse(AgentCount.Text), globals.BoardDimension, globals.PathsDict, globals.StrategyDict, globals.randGen);
             Application.Current.Resources.MergedDictionaries.Add(globals.PathsDict);
+            Application.Current.Resources.MergedDictionaries.Add(globals.StrategyDict);
 
             for (int idx = 1; idx <= int.Parse(AgentCount.Text); idx++)
             {
@@ -115,6 +116,11 @@ namespace MPE_try1
                 globals.storTmp.Children.Add(aniXTmp);
                 globals.storTmp.Children.Add(aniYTmp);
 
+            }
+            foreach (var entry in globals.StrategyDict.Keys)
+            {
+                LoggingField.Text = LoggingField.Text + entry.ToString() + " - " 
+                    + globals.StrategyDict[entry].ToString() + "\n";
             }
         }
 

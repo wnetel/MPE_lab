@@ -8,19 +8,11 @@ using System.Windows.Media;
 
 namespace MPE_try1
 {
-    public class eVisualizer
+    public class eInitializer
     {
-        private ResourceDictionary pathsDict;
 
-        public ResourceDictionary PathsDict
+        public eInitializer(int upperLimit, int BoardDimension, ResourceDictionary pathsDict, ResourceDictionary strategyDict, Random randGen)
         {
-            get { return pathsDict; }
-            set { pathsDict = value; }
-        }
-
-        public eVisualizer(int upperLimit, int BoardDimension, ResourceDictionary pathsDict, Random randGen)
-        {
-
             for (int idx = 1; idx <= upperLimit; idx++)
             {
                 PathFigure myPathFigure = new PathFigure();
@@ -42,6 +34,13 @@ namespace MPE_try1
                 myPathGeometry.Figures = myPathFigureCollection;
 
                 pathsDict.Add("AnimationPath" + idx, myPathGeometry);
+            }
+
+            for (int strid = 0; strid < 16; strid++)
+            {
+                string binarized;
+                binarized = Convert.ToString(strid, 2).PadLeft(4,'0');
+                strategyDict.Add(strid.ToString(), binarized);
             }
 
         }

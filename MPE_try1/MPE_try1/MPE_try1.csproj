@@ -103,8 +103,7 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="eAgent.cs" />
-    <Compile Include="eArena.cs" />
-    <Compile Include="eVisualizer.cs" />
+    <Compile Include="eInitializer.cs" />
     <Compile Include="GlobalVars.cs" />
     <Compile Include="MainWindow.xaml.cs">
       <DependentUpon>MainWindow.xaml</DependentUpon>
